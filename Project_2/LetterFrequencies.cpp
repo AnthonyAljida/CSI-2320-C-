@@ -3,7 +3,6 @@
 #include <string>
 #include <limits>
 #include <cctype>
-#include <bits/stdc++.h>
 #include <map>
 using namespace std;
 ifstream processFile();
@@ -55,7 +54,7 @@ ifstream processFile()
     {
         cout << "You entered the wrong name of your file, please double-check the name" << endl;
         cin >> fileName;
-        file.open(fileName);
+        file.open(fileName, ios::in);
     }
     return file;
 }

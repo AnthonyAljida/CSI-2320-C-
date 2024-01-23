@@ -1,0 +1,54 @@
+
+Frequency of A's: 634
+Frequency of B's: 147
+Frequency of C's: 563
+Frequency of D's: 446
+Frequency of E's: 1511
+Frequency of F's: 626
+Frequency of G's: 426
+Frequency of H's: 249
+Frequency of I's: 862
+Frequency of J's: 21
+Frequency of K's: 152
+Frequency of L's: 425
+Frequency of M's: 370
+Frequency of N's: 613
+Frequency of O's: 704
+Frequency of P's: 539
+Frequency of Q's: 7
+Frequency of R's: 688
+Frequency of S's: 802
+Frequency of T's: 1115
+Frequency of U's: 306
+Frequency of V's: 209
+Frequency of W's: 26
+Frequency of X's: 532
+Frequency of Y's: 171
+Frequency of Z's: 34
+
+Frequency of Q's after sorting in ascending order of frequencies: 7
+Frequency of J's after sorting in ascending order of frequencies: 21
+Frequency of W's after sorting in ascending order of frequencies: 26
+Frequency of Z's after sorting in ascending order of frequencies: 34
+Frequency of B's after sorting in ascending order of frequencies: 147
+Frequency of K's after sorting in ascending order of frequencies: 152
+Frequency of Y's after sorting in ascending order of frequencies: 171
+Frequency of V's after sorting in ascending order of frequencies: 209
+Frequency of H's after sorting in ascending order of frequencies: 249
+Frequency of U's after sorting in ascending order of frequencies: 306
+Frequency of M's after sorting in ascending order of frequencies: 370
+Frequency of L's after sorting in ascending order of frequencies: 425
+Frequency of G's after sorting in ascending order of frequencies: 426
+Frequency of D's after sorting in ascending order of frequencies: 446
+Frequency of X's after sorting in ascending order of frequencies: 532
+Frequency of P's after sorting in ascending order of frequencies: 539
+Frequency of C's after sorting in ascending order of frequencies: 563
+Frequency of N's after sorting in ascending order of frequencies: 613
+Frequency of F's after sorting in ascending order of frequencies: 626
+Frequency of A's after sorting in ascending order of frequencies: 634
+Frequency of R's after sorting in ascending order of frequencies: 688
+Frequency of O's after sorting in ascending order of frequencies: 704
+Frequency of S's after sorting in ascending order of frequencies: 802
+Frequency of I's after sorting in ascending order of frequencies: 862
+Frequency of T's after sorting in ascending order of frequencies: 1115
+Frequency of E's after sorting in ascending order of frequencies: 1511
