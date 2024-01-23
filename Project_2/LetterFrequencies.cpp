@@ -4,6 +4,7 @@
 #include <limits>
 #include <cctype>
 #include <bits/stdc++.h>
+#include <map>
 using namespace std;
 ifstream processFile();
 void readCharactersToArray(ifstream &file, int arr[]);
@@ -12,6 +13,7 @@ int main()
 {
     // Sets default values to 0
     int frequencies[26] = {};
+    std::multimap<int, char> ex;
     // Returns the opened file
     ifstream openedFile = processFile();
 
@@ -24,16 +26,17 @@ int main()
     for (int i = 0; i < length; i++)
     {
         char letter = static_cast<char>(i + 'A');
-        cout << "Frequency is of " << letter << "'s: " << frequencies[i] << endl;
+        cout << "Frequency of " << letter << "'s: " << frequencies[i] << endl;
+        ex.insert(pair<int, char>(frequencies[i], letter));
     }
-    // Sort array
+    cout << endl;
+
+    // Sort array ascending
     sortInAscending(frequencies, length);
 
-    // Todo: sort in ascending order and display the letters next to the frequencies and make readme.md
-    for (int i = 0; i < length; i++)
+    for (auto itr = ex.begin(); itr != ex.end(); ++itr)
     {
-        char letter = static_cast<char>(i + 'A');
-        cout << "Frequency is of " << letter << "'s: " << frequencies[i] << endl;
+        cout << "Frequency of " << itr->second << "'s after sorting in ascending order of frequencies: " << itr->first << endl;
     }
     return 0;
 }
@@ -70,8 +73,7 @@ void readCharactersToArray(ifstream &fileOpened, int arr[])
     }
 }
 
-void sortInAscending(int arr[], int lengthOfArray)
+void sortInAscending(int arr[], int length)
 {
-
-    sort(arr, arr + lengthOfArray);
+    sort(arr, arr + length);
 }
