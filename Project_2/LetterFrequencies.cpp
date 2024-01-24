@@ -4,6 +4,7 @@
 #include <limits>
 #include <cctype>
 #include <map>
+#include <algorithm>
 using namespace std;
 ifstream processFile();
 void readCharactersToArray(ifstream &file, int arr[]);
