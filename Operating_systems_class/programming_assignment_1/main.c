@@ -78,7 +78,7 @@ int main()
             }
             else
             {
-                printf("%d", userEnteredProcesses);
+                printf("%d\n", userEnteredProcesses);
                 printf("Invalid number of processes. Please enter a number between 5 and 10.\n");
             }
 
