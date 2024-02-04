@@ -18,6 +18,12 @@
     "initializer_list": "cpp",
     "ranges": "cpp",
     "span": "cpp",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "stdio.h": "c",
+    "unistd.h": "c",
+    "signal.h": "c",
+    "sstream": "c",
+    "bitset": "c",
+    "utility": "c"
   }
 }
