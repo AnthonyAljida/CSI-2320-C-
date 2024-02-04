@@ -18,6 +18,7 @@ void create_processes(int n);
 void kill_all_child_processes();
 void kill_process(int process_num);
 int findIndex(pid_t arr[], int size, int value);
+int stringToNumber(char command[]);
 
 void handle_ctrl_c(int signum);
 void set_scheduler_rr(int quantum);
@@ -94,29 +95,13 @@ int main()
             break;
 
         case 'k':
-            char number_str[20];
-            int j = 0;
-
-            for (int i = 1; i < strlen(command); i++)
-            {
-                // If the character is a digit, add it to the number string
-                if (isdigit(command[i]))
-                {
-                    number_str[j++] = command[i];
-                }
-                else if (j > 0)
-                {
-                    // If it's not a digit but we've already started recording digits
-                    // It means we've reached the end of the number
-                    break;
-                }
-            }
-
-            number_str[j] = '\0'; // Null-terminate the number string
-            // Convert the extracted string number to an integer using atoi()
-            int number = atoi(number_str);
+            int number = stringToNumber(command);
             kill_process(number);
             break;
+
+        case 'r':
+            int number2 = stringToNumber(command);
+            resume_process(number2);
         default:
             // User entered an invalid command
             printf("Invalid command\n");
@@ -124,6 +109,31 @@ int main()
     }
 }
 
+int stringToNumber(char command[])
+{
+    char number_str[20];
+    int j = 0;
+
+    for (int i = 1; i < strlen(command); i++)
+    {
+        // If the character is a digit, add it to the number string
+        if (isdigit(command[i]))
+        {
+            number_str[j++] = command[i];
+        }
+        else if (j > 0)
+        {
+            // If it's not a digit but we've already started recording digits
+            // It means we've reached the end of the number
+            break;
+        }
+    }
+
+    number_str[j] = '\0'; // Null-terminate the number string
+    // Convert the extracted string number to an integer using atoi()
+    int number = atoi(number_str);
+    return number;
+}
 void kill_all_child_processes()
 {
     // Kill all child processes using SIGKILL
@@ -154,7 +164,6 @@ void create_processes(int n)
         else if (pid == 0)
         {
             // Child process
-            printf("Creating process P%d\n", i);
             fflush(stdout);
             // Execute the program defined in the first task
             execl("./task", "task", NULL);
@@ -246,7 +255,19 @@ void kill_process(int process_num)
 
 void resume_process(int process_num)
 {
-    // Resume a process with process number
+    if (kill(process_num, SIGCONT) == 0)
+    {
+        printf("Process ID %d resumed and state is now running.\n", process_num);
+        int index = findIndex(process_pids, MAX_PROCESSES, process_num);
+        processStates[index].ready = false;
+        processStates[index].running = true;
+        processStates[index].waiting = false;
+        processStates[index].terminated = false;
+    }
+    else
+    {
+        printf("Error: Unable to kill process %d\n, process does not exist", process_num);
+    }
 }
 
 void run_all_processes()
