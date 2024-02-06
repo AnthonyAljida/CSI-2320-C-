@@ -44,6 +44,8 @@ int main()
     // newline gets rid of the newline character each time and command is our commands
     char newline;
     char command[20];
+    int num;
+    int num2;
     while (1)
     {
         // Starting declarations
@@ -88,20 +90,20 @@ int main()
         case 'l':
             if (num_processes == 0)
             {
-                printf("You have no processes made");
+                printf("You have no processes made\n");
                 break;
             }
             listCurrentProcesses(process_pids, num_processes);
             break;
 
         case 'k':
-            int number = stringToNumber(command);
-            kill_process(number);
+            num = stringToNumber(command);
+            kill_process(num);
             break;
 
         case 'r':
-            int number2 = stringToNumber(command);
-            resume_process(number2);
+            num2 = stringToNumber(command);
+            resume_process(num2);
         default:
             // User entered an invalid command
             printf("Invalid command\n");
