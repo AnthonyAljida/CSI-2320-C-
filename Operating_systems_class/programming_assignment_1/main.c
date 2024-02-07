@@ -17,15 +17,12 @@ void listCurrentProcesses(pid_t arr[], int num);
 void create_processes(int n);
 void kill_all_child_processes();
 void kill_process(int process_num);
+void resume_process(int process_num);
+
+// Helper functions throughout the program
+void sig_handle();
 int findIndex(pid_t arr[], int size, int value);
 int stringToNumber(char command[]);
-
-void handle_ctrl_c(int signum);
-void set_scheduler_rr(int quantum);
-void set_scheduler_fcfs();
-void resume_process(int process_num);
-void run_all_processes();
-
 // This object is used to manage the states of all the processes, allows for easy look up of each process
 struct state
 {
@@ -39,15 +36,24 @@ struct state
 pid_t process_pids[MAX_PROCESSES] = {0};   // Array to store process IDs, initialize values to 0
 int num_processes = 0;                     // Counter to keep track of the processes
 struct state processStates[MAX_PROCESSES]; // An array of state objects made so every process has their own state,
+bool waiting = false;
+
 int main()
 {
+
     // newline gets rid of the newline character each time and command is our commands
     char newline;
     char command[20];
-    int num;
-    int num2;
+    // For the switch statements, variables for the numbers in the string
+    int numForC;
+    int numForK;
+    int numForR;
+
+    // Handles ctrl+c
+    signal(SIGINT, sig_handle);
     while (1)
     {
+
         // Starting declarations
         printf("shell 5500>>>");
         scanf("%19s", command);
@@ -67,27 +73,45 @@ int main()
         switch (first_char)
         {
 
+        // Case for ending the program
         case 'x':
+            // Error handling
+            if (strlen(command) > 1)
+            {
+                printf("Invalid command\n");
+                break;
+            }
+            // Terminate all child processes
             kill_all_child_processes();
+            // Terminate main process
+            printf("All processes terminated");
             exit(0);
             break;
 
+        // Case to create processes
         case 'c':
-            num_processes = 0;
-            int userEnteredProcesses = command[1] - '0';
-            if (userEnteredProcesses >= 5 && userEnteredProcesses <= 10)
+
+            numForC = stringToNumber(command);
+            if (numForC >= 5 && numForC <= 10)
             {
-                create_processes(userEnteredProcesses);
+                num_processes = 0;
+                create_processes(numForC);
             }
             else
             {
-                printf("%d\n", userEnteredProcesses);
                 printf("Invalid number of processes. Please enter a number between 5 and 10.\n");
             }
 
             break;
 
         case 'l':
+            // Error handling
+            if (strlen(command) > 1)
+            {
+                printf("Invalid command\n");
+                break;
+            }
+            // Error handling
             if (num_processes == 0)
             {
                 printf("You have no processes made\n");
@@ -97,13 +121,29 @@ int main()
             break;
 
         case 'k':
-            num = stringToNumber(command);
-            kill_process(num);
+            // Error handling
+            if (strlen(command) > 1 && !(isdigit(command[1])))
+            {
+                printf("Invalid command\n");
+                break;
+            }
+            numForK = stringToNumber(command);
+            kill_process(numForK);
             break;
 
         case 'r':
-            num2 = stringToNumber(command);
-            resume_process(num2);
+            // Error handling
+            if (strlen(command) > 1 && !(isdigit(command[1])))
+            {
+                printf("Invalid command\n");
+                break;
+            }
+            numForR = stringToNumber(command);
+            resume_process(numForR);
+            // Pause the while loop
+            while (waiting)
+                ;
+            break;
         default:
             // User entered an invalid command
             printf("Invalid command\n");
@@ -111,31 +151,6 @@ int main()
     }
 }
 
-int stringToNumber(char command[])
-{
-    char number_str[20];
-    int j = 0;
-
-    for (int i = 1; i < strlen(command); i++)
-    {
-        // If the character is a digit, add it to the number string
-        if (isdigit(command[i]))
-        {
-            number_str[j++] = command[i];
-        }
-        else if (j > 0)
-        {
-            // If it's not a digit but we've already started recording digits
-            // It means we've reached the end of the number
-            break;
-        }
-    }
-
-    number_str[j] = '\0'; // Null-terminate the number string
-    // Convert the extracted string number to an integer using atoi()
-    int number = atoi(number_str);
-    return number;
-}
 void kill_all_child_processes()
 {
     // Kill all child processes using SIGKILL
@@ -144,17 +159,12 @@ void kill_all_child_processes()
     while (wait(NULL) > 0)
         ;
 }
-void handle_ctrl_c(int signum)
-{
-    // Handle Ctrl-C
-    // Suspend the currently running process and transfer control to scheduler
-}
 
 void create_processes(int n)
 
 {
-
-    for (int i = 1; i <= n; i++)
+    // Loop to create processes
+    for (int i = 0; i < n; i++)
     {
         pid_t pid = fork();
         if (pid < 0)
@@ -175,11 +185,11 @@ void create_processes(int n)
         else
         {
             // Parent process
-            process_pids[i - 1] = pid; // Store the PID in the array to be able to use
-            processStates[i - 1].ready = true;
-            processStates[i - 1].running = false;
-            processStates[i - 1].waiting = false;
-            processStates[i - 1].terminated = false;
+            process_pids[i] = pid; // Store the PID in the array to be able to use
+            processStates[i].ready = true;
+            processStates[i].running = false;
+            processStates[i].waiting = false;
+            processStates[i].terminated = false;
             num_processes++; // Increment the number of created processes
 
             // Suspend the child process immediately
@@ -214,6 +224,76 @@ void listCurrentProcesses(pid_t arr[], int size)
     printf("Total number of processes %d\n", num_processes);
 }
 
+void kill_process(int process_num)
+{
+    // If the terminate is successful, update the values of the process
+    int exist = findIndex(process_pids, MAX_PROCESSES, process_num);
+    if (exist != -1)
+    {
+        if (kill(process_num, SIGKILL) == 0)
+        {
+            printf("Process ID %d killed successfully and state is now set to terminated.\n", process_num);
+            int index = findIndex(process_pids, MAX_PROCESSES, process_num);
+            processStates[index].ready = false;
+            processStates[index].running = false;
+            processStates[index].waiting = false;
+            processStates[index].terminated = true;
+        }
+        else
+        {
+            printf("Error: Unable to kill process %d, process does not exist\n", process_num);
+        }
+    }
+    else
+    {
+        printf("Error: Unable to kill process %d, process does not exist\n", process_num);
+    }
+}
+
+void resume_process(int process_num)
+{
+    // Resumes process
+    int exist = findIndex(process_pids, MAX_PROCESSES, process_num);
+    if (exist != -1)
+    {
+        if (kill(process_num, SIGCONT) == 0)
+        {
+            printf("Process ID %d resumed and state is now running.\n", process_num);
+            int index = findIndex(process_pids, MAX_PROCESSES, process_num);
+            processStates[index].ready = false;
+            processStates[index].running = true;
+            processStates[index].waiting = false;
+            processStates[index].terminated = false;
+            waiting = true;
+        }
+        else
+        {
+            printf("Error: Unable to resume process %d, process does not exist\n", process_num);
+        }
+    }
+    else
+    {
+        printf("Error: Unable to resume process %d, process does not exist\n", process_num);
+    }
+}
+// Helper function for ctrl + c override
+void sig_handle()
+{
+    // Suspend the running process
+    for (int i = 0; i < MAX_PROCESSES; i++)
+    {
+        // If the process is running, then turn it back into the ready state
+        if (processStates[i].running)
+        {
+            processStates[i].running = false;
+            processStates[i].ready = true;
+            kill(process_pids[i], SIGSTOP);
+        }
+    }
+    // Set program to continue while loop
+    waiting = false;
+}
+// Helper function through out the program
 int findIndex(pid_t arr[], int size, int value)
 {
     for (int i = 0; i < size; i++)
@@ -226,53 +306,29 @@ int findIndex(pid_t arr[], int size, int value)
     return -1; // Return -1 if the value is not found
 }
 
-void set_scheduler_rr(int quantum)
+// Helper function in switch statement
+int stringToNumber(char command[])
 {
-    // Set scheduler to round robin with time quantum
-    // Use alarm() system call
-}
+    char number_str[20];
+    int j = 0;
 
-void set_scheduler_fcfs()
-{
-    // Set scheduler to first come first serve
-}
+    for (int i = 1; i < strlen(command); i++)
+    {
+        // If the character is a digit, add it to the number string
+        if (isdigit(command[i]))
+        {
+            number_str[j++] = command[i];
+        }
+        else if (j > 0)
+        {
+            // If it's not a digit but we've already started recording digits
+            // It means we've reached the end of the number
+            break;
+        }
+    }
 
-void kill_process(int process_num)
-{
-    // If the terminate is successful, update the values of the process
-    if (kill(process_num, SIGKILL) == 0)
-    {
-        printf("Process ID %d killed successfully and state is now set to terminated.\n", process_num);
-        int index = findIndex(process_pids, MAX_PROCESSES, process_num);
-        processStates[index].ready = false;
-        processStates[index].running = false;
-        processStates[index].waiting = false;
-        processStates[index].terminated = true;
-    }
-    else
-    {
-        printf("Error: Unable to kill process %d\n, process does not exist", process_num);
-    }
-}
-
-void resume_process(int process_num)
-{
-    if (kill(process_num, SIGCONT) == 0)
-    {
-        printf("Process ID %d resumed and state is now running.\n", process_num);
-        int index = findIndex(process_pids, MAX_PROCESSES, process_num);
-        processStates[index].ready = false;
-        processStates[index].running = true;
-        processStates[index].waiting = false;
-        processStates[index].terminated = false;
-    }
-    else
-    {
-        printf("Error: Unable to kill process %d\n, process does not exist", process_num);
-    }
-}
-
-void run_all_processes()
-{
-    // Run all processes after configurations
+    number_str[j] = '\0'; // Null-terminate the number string
+    // Convert the extracted string number to an integer using atoi()
+    int number = atoi(number_str);
+    return number;
 }
