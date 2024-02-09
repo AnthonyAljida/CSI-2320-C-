@@ -18,6 +18,9 @@ int main()
 
     int *dup = duplicate(generatedArray, size);
     display(dup, size * 2);
+
+    delete[] generatedArray;
+    delete[] dup;
 }
 
 int *duplicate(int *arr, int size)
