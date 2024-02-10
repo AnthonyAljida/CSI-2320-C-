@@ -4,24 +4,11 @@
 #include <stdlib.h>
 
 volatile sig_atomic_t count = 0;
-volatile sig_atomic_t running = 1;
-
-void handle_sigint(int sig)
-{
-    printf("Ignoring Ctrl+C (SIGINT) signal\n");
-}
 
 int main()
 {
     // Set the signal handler to ignore SIGINT
     if (signal(SIGINT, SIG_IGN) == SIG_ERR)
-    {
-        perror("signal");
-        return 1;
-    }
-
-    // Register a custom handler for SIGINT (just to demonstrate)
-    if (signal(SIGINT, handle_sigint) == SIG_ERR)
     {
         perror("signal");
         return 1;
