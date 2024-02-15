@@ -62,13 +62,8 @@ struct state
 pid_t process_pids[MAX_PROCESSES] = {0};   // Array to store process IDs, initialize values to 0
 int num_processes = 0;                     // Counter to keep track of the processes
 struct state processStates[MAX_PROCESSES]; // An array of state objects made so every process has their own state,
-bool waiting = false;
-// For Cn command
-bool is_a_process_running = false;
 
 // For managing run all command
-int current = 0;
-bool rall_pressed = false;
 bool is_running = false;
 
 // Flags for the 2 modes
