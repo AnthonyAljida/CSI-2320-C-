@@ -11,14 +11,18 @@
 // Fixed constant for process array
 #define MAX_PROCESSES 10
 
+#define MAX_SIZE 100
 // Function prototypes
 // Core functions
 void listCurrentProcesses(pid_t arr[], int num);
 void create_processes(int n);
 void kill_all_child_processes();
 void kill_process(int process_num);
+/// @brief
+/// @param process_num
 void run_process(int process_num);
 void alarm_handler(int signum);
+/// @brief
 void sig_handle();
 void put_in_ready_state(int process_num);
 
@@ -26,6 +30,24 @@ void put_in_ready_state(int process_num);
 int findIndex(pid_t arr[], int size, int value);
 int stringToNumber(char command[]);
 int stringToNumberSRRQ(char command[]);
+
+// Define the structure of a queue
+typedef struct
+{
+    int items[MAX_SIZE];
+    int front;
+    int back;
+} Queue;
+
+// Prototypes for the queue
+void initQueue(Queue *q);
+int isEmpty(Queue *q);
+int isFull(Queue *q);
+void enqueue(Queue *q, int value);
+int dequeue(Queue *q);
+void display(Queue *q);
+int front(Queue *q);
+int back(Queue *q);
 
 // This object is used to manage the states of all the processes, allows for easy look up of each process
 struct state
@@ -59,9 +81,12 @@ int global_process_num;
 // Number for alarm()
 int numForS;
 
+Queue scheduler;
+
 int main()
 {
-
+    // Creates the queue for the project
+    initQueue(&scheduler);
     // newline gets rid of the newline character each time and command is our commands
     char newline;
     char command[20];
@@ -75,6 +100,11 @@ int main()
     signal(SIGALRM, alarm_handler);
     while (1)
     {
+
+        if (!isEmpty(&scheduler) && global_process_num == 0)
+        {
+            run_process(front(&scheduler));
+        }
         // Initial start up
         printf("shell 5500>>>");
         scanf("%19s", command);
@@ -94,7 +124,7 @@ int main()
         switch (first_char)
         {
 
-            // Case for ending the program
+        // Case for ending the program
         case 'x':
             // Error handling
             if (strlen(command) > 1)
@@ -105,7 +135,6 @@ int main()
             // Terminate all child processes
             kill_all_child_processes();
             // Terminate main process
-            printf("All processes terminated");
             exit(0);
             break;
 
@@ -114,28 +143,19 @@ int main()
 
             // If a child process is running, do not create new processes
 
-            // If no process is running, create processes
-            if (global_process_num == 0)
+            numForC = stringToNumber(command);
+            if (numForC >= 5 && numForC <= 10)
             {
-                numForC = stringToNumber(command);
-                if (numForC >= 5 && numForC <= 10)
-                {
-                    num_processes = 0;
-                    create_processes(numForC);
-                    printf("%d processes made\n", numForC);
-                }
-                else
-                {
-                    printf("Invalid number of processes. Please enter a number between 5 and 10.\n");
-                }
-
-                break;
+                num_processes = 0;
+                create_processes(numForC);
+                printf("%d processes made\n", numForC);
             }
             else
             {
-                printf("Switch back to shell to make more processes\n");
-                break;
+                printf("Invalid number of processes. Please enter a number between 5 and 10.\n");
             }
+
+            break;
 
         case 'l':
             // Error handling
@@ -150,20 +170,9 @@ int main()
                 printf("You have no processes made\n");
                 break;
             }
-            else if (global_process_num == 0)
-            {
-                listCurrentProcesses(process_pids, num_processes);
-                break;
-            }
-            else
-            {
-                printf("Process interrupted\n");
-                put_in_ready_state(global_process_num);
-                run_process(process_pids[current]);
-                listCurrentProcesses(process_pids, num_processes);
 
-                break;
-            }
+            listCurrentProcesses(process_pids, num_processes);
+
             break;
 
         case 'k':
@@ -179,21 +188,9 @@ int main()
                 break;
             }
 
-            else if (global_process_num == 0)
-            {
-                numForK = stringToNumber(command);
-                kill_process(numForK);
-                break;
-            }
-            else
-            {
-                printf("Process interrupted\n");
-                put_in_ready_state(global_process_num);
-                numForK = stringToNumber(command);
-                kill_process(numForK);
-                run_process(process_pids[current]);
-                break;
-            }
+            numForK = stringToNumber(command);
+            kill_process(numForK);
+
             break;
 
         case 'r':
@@ -201,9 +198,12 @@ int main()
             // Tells program rall is pressed
             if (strcmp(command, "rall") == 0)
             {
-                current = 0;
-                rall_pressed = true;
-                run_process(process_pids[current]);
+
+                for (int i = 0; i < num_processes; i++)
+                {
+                    put_in_ready_state(process_pids[i]);
+                }
+
                 break;
             }
 
@@ -228,7 +228,17 @@ int main()
             if (strcmp(command, "sfcfs") == 0)
             {
                 printf("Mode set to first come first serve\n");
+                while (!isEmpty(&scheduler))
+                {
+                    dequeue(&scheduler);
+                }
+                for (int i = 0; i < num_processes; i++)
+                {
+                    enqueue(&scheduler, process_pids[i]);
+                }
+
                 fcfs = true;
+                rrq = false;
                 alarm(0);
                 break;
             }
@@ -238,6 +248,7 @@ int main()
                 alarm(numForS);
                 printf("Alarm set for %d seconds\n", numForS);
                 rrq = true;
+                fcfs = false;
                 break;
             }
             else
@@ -293,7 +304,7 @@ void create_processes(int n)
             processStates[i].suspended = false;
 
             num_processes++; // Increment the number of created processes
-
+            enqueue(&scheduler, pid);
             // Suspend the child process immediately
             kill(pid, SIGSTOP);
         }
@@ -316,20 +327,20 @@ void listCurrentProcesses(pid_t arr[], int size)
     {
         if (processStates[i].ready)
         {
-            printf("Process %d, %d is in the ready state\n", i + 1, arr[i]);
+            printf("Process %d is in the ready state\n", arr[i]);
         }
         else if (processStates[i].running)
         {
-            printf("Process %d, %d is in the running state\n", i + 1, arr[i]);
+            printf("Process %d is in the running state\n", arr[i]);
         }
 
         else if (processStates[i].terminated)
         {
-            printf("Process %d, %d is terminated\n", i + 1, arr[i]);
+            printf("Process %d is terminated\n", arr[i]);
         }
         else if (processStates[i].suspended)
         {
-            printf("Process %d, %d is suspended\n", i + 1, arr[i]);
+            printf("Process %d is suspended\n", arr[i]);
         }
     }
     printf("Total number of processes %d\n", num_processes);
@@ -351,8 +362,6 @@ void kill_process(int process_num)
             processStates[index].running = false;
             processStates[index].terminated = true;
             processStates[index].suspended = false;
-
-            is_running = false;
         }
         // Error handling
         else
@@ -365,67 +374,38 @@ void kill_process(int process_num)
         printf("Error: Unable to kill process %d, process does not exist\n", process_num);
     }
 }
-void put_in_suspended_state(int process_num)
-{
-    // If the terminate is successful, update the values of the process
-    int exist = findIndex(process_pids, MAX_PROCESSES, process_num);
 
-    // Conditionals to check for a successful terminate
-    if (exist != -1 && processStates[exist].running)
-    {
-        if (kill(process_num, SIGSTOP) == 0)
-        {
-            int index = findIndex(process_pids, MAX_PROCESSES, process_num);
-            processStates[index].ready = false;
-            processStates[index].running = false;
-            processStates[index].terminated = false;
-            processStates[index].suspended = true;
-
-            // No process is running right now set reset flags
-            global_process_num = 0;
-            is_running = false;
-            // If rall is pressed, go back to the first element to reren processes
-        }
-        // Error handling
-
-        else
-        {
-            printf("Error\n");
-        }
-    }
-    else
-    {
-        printf("Error: Unable to find process %d\n", process_num);
-    }
-}
 void put_in_ready_state(int process_num)
 {
     // If the terminate is successful, update the values of the process
     int exist = findIndex(process_pids, MAX_PROCESSES, process_num);
 
-    // Conditionals to check for a successful terminate
-    if (exist != -1 && (processStates[exist].running || processStates[exist].suspended))
+    if (exist != -1)
     {
-        if (kill(process_num, SIGSTOP) == 0)
+
+        if (processStates[exist].suspended)
         {
+
             int index = findIndex(process_pids, MAX_PROCESSES, process_num);
             processStates[index].ready = true;
             processStates[index].running = false;
             processStates[index].terminated = false;
             processStates[index].suspended = false;
-
+            enqueue(&scheduler, process_num);
             printf("Process ID %d is put back into ready queue\n", process_num);
         }
-        // Error handling
-
-        else
+        else if (processStates[exist].terminated)
         {
-            printf("Error\n");
+            printf("Process %d was terminated, unable to resume process\n", process_num);
+        }
+        else if (processStates[exist].ready)
+        {
+            printf("Process %d is already in the ready queue\n", process_num);
         }
     }
     else
     {
-        printf("Error: Unable to find process %d\n", process_num);
+        printf("Process %d does not exist, please try again\n", process_num);
     }
 }
 
@@ -438,26 +418,15 @@ void run_process(int process_num)
     {
         if (kill(process_num, SIGCONT) == 0)
         {
-            global_process_num = process_num;
             printf("Process ID %d resumed and state is now running.\n", process_num);
-            int index = findIndex(process_pids, MAX_PROCESSES, process_num);
-            processStates[index].ready = false;
-            processStates[index].running = true;
-            processStates[index].terminated = false;
-            processStates[index].suspended = false;
+            processStates[exist].ready = false;
+            processStates[exist].running = true;
+            processStates[exist].terminated = false;
+            processStates[exist].suspended = false;
 
             // Logic for when all processes are scheduled to run
+            global_process_num = process_num;
             is_running = true;
-            if (rall_pressed)
-            {
-                current++;
-
-                if (current == num_processes)
-                {
-                    current = 0;
-                    rall_pressed = false;
-                }
-            }
         }
         else
         {
@@ -465,45 +434,46 @@ void run_process(int process_num)
         }
     }
     // When all processes are running but a process in the queue is terminated or suspended, use recursion to skip it
-    else if (rall_pressed && current < num_processes - 1)
+    else if (processStates[exist].terminated)
     {
-        current = current + 1;
-        // Recursion to skip terminated processes with the schedule
-        run_process(process_pids[current]);
+        dequeue(&scheduler);
+        run_process(front(&scheduler));
+    }
+    else if (processStates[exist].suspended)
+    {
+        dequeue(&scheduler);
+        run_process(front(&scheduler));
     }
     else
     {
-        printf("No processes left in the ready queue, switching back to shell\n");
+        printf("No processes left in the ready queue, please resume a process to enable the scheduler\n");
     }
 }
 
 // Helper function for ctrl + c override
 void sig_handle()
 {
-    // Suspend the running process
-    for (int i = 0; i < MAX_PROCESSES; i++)
+    if (global_process_num == 0)
     {
-        // If the process is running, then turn it back into the ready state
-
-        if (processStates[i].running)
-        {
-            processStates[i].running = false;
-            processStates[i].ready = false;
-            processStates[i].suspended = true;
-            processStates[i].terminated = false;
-
-            kill(process_pids[i], SIGSTOP);
-
-            // Keeps track of the current process
-            is_running = false;
-            global_process_num = 0;
-            break;
-        }
+        return;
     }
-    // For managing rall
-    if (rall_pressed)
+
+    // If the process is running, then turn it back into the suspended state
+    int top = dequeue(&scheduler);
+    int i = findIndex(process_pids, MAX_PROCESSES, top);
+
+    if (processStates[i].running)
     {
-        run_process(process_pids[current]);
+        processStates[i].running = false;
+        processStates[i].ready = false;
+        processStates[i].suspended = true;
+        processStates[i].terminated = false;
+
+        kill(process_pids[i], SIGSTOP);
+
+        // Keeps track of the current process
+        is_running = false;
+        global_process_num = 0;
     }
 }
 // Helper function through out the program
@@ -571,4 +541,92 @@ int stringToNumberSRRQ(char command[])
     // Convert the extracted string number to an integer using atoi()
     int number = atoi(number_str);
     return number;
+}
+
+// Initialize the queue
+void initQueue(Queue *q)
+{
+    q->front = -1;
+    q->back = -1;
+}
+
+// Check if the queue is empty
+int isEmpty(Queue *q)
+{
+    return q->back == -1;
+}
+
+// Add an element to the back of the queue
+void enqueue(Queue *q, int value)
+{
+
+    if (isEmpty(q))
+    {
+        q->front = 0;
+        q->back = 0;
+    }
+    else
+    {
+        q->back++;
+    }
+    q->items[q->back] = value;
+}
+
+// Remove an element from the front of the queue
+int dequeue(Queue *q)
+{
+    int item;
+    if (isEmpty(q))
+    {
+        printf("Queue is empty\n");
+        return -1;
+    }
+    item = q->items[q->front];
+    if (q->front == q->back)
+    {
+        q->front = -1;
+        q->back = -1;
+    }
+    else
+    {
+        q->front++;
+    }
+    return item;
+}
+
+// Display the elements of the queue
+void display(Queue *q)
+{
+    if (isEmpty(q))
+    {
+        printf("Queue is empty.\n");
+        return;
+    }
+    printf("Queue elements: ");
+    for (int i = q->front; i <= q->back; i++)
+    {
+        printf("%d ", q->items[i]);
+    }
+    printf("\n");
+}
+// Get the value of the front element of the queue without dequeuing
+int front(Queue *q)
+{
+    if (isEmpty(q))
+    {
+        printf("Queue is empty.\n");
+        return -1; // or any appropriate value indicating an error
+    }
+    return q->items[q->front];
+}
+
+// Get the value of the back element of the queue without dequeuing
+int back(Queue *q)
+{
+    if (isEmpty(q))
+    {
+        printf("Queue is empty.\n");
+        return -1; // or any appropriate value indicating an error
+    }
+    return q->items[q->back];
 }

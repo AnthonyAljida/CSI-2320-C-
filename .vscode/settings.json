@@ -24,6 +24,7 @@
     "signal.h": "c",
     "sstream": "c",
     "bitset": "c",
-    "utility": "c"
+    "utility": "c",
+    "stdbool.h": "c"
   }
 }
