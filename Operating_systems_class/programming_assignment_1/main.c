@@ -8,10 +8,9 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-// Fixed constant for process array
-#define MAX_PROCESSES 10
-
-#define MAX_SIZE 100
+// Fixed constants
+#define MAX_PROCESSES 10000000
+#define MAX_SIZE 10000000
 // Function prototypes
 // Core functions
 void listCurrentProcesses(pid_t arr[], int num);
@@ -63,9 +62,6 @@ pid_t process_pids[MAX_PROCESSES] = {0};   // Array to store process IDs, initia
 int num_processes = 0;                     // Counter to keep track of the processes
 struct state processStates[MAX_PROCESSES]; // An array of state objects made so every process has their own state,
 
-// For managing run all command
-bool is_running = false;
-
 // Flags for the 2 modes
 bool rrq = false;
 bool fcfs = true;
@@ -76,6 +72,7 @@ int global_process_num;
 // Number for alarm()
 int numForS;
 
+// The scheduling queue
 Queue scheduler;
 
 int main()
@@ -90,7 +87,7 @@ int main()
     int numForK;
     int numForR;
 
-    // Handles ctrl+c
+    // Handles ctrl+c and alarm
     signal(SIGINT, sig_handle);
     signal(SIGALRM, alarm_handler);
     while (1)
@@ -141,7 +138,6 @@ int main()
             numForC = stringToNumber(command);
             if (numForC >= 5 && numForC <= 10)
             {
-                num_processes = 0;
                 create_processes(numForC);
                 printf("%d processes made\n", numForC);
             }
@@ -222,6 +218,18 @@ int main()
         case 's':
             if (strcmp(command, "sfcfs") == 0)
             {
+                if (global_process_num != 0)
+                {
+
+                    kill(global_process_num, SIGSTOP);
+                    int i = findIndex(process_pids, num_processes, global_process_num);
+                    processStates[i].ready = true;
+                    processStates[i].running = false;
+                    processStates[i].terminated = false;
+                    processStates[i].suspended = false;
+                    global_process_num = 0;
+                }
+
                 printf("Mode set to first come first serve\n");
                 while (!isEmpty(&scheduler))
                 {
@@ -229,6 +237,7 @@ int main()
                 }
                 for (int i = 0; i < num_processes; i++)
                 {
+
                     enqueue(&scheduler, process_pids[i]);
                 }
 
@@ -270,6 +279,7 @@ void kill_all_child_processes()
 void create_processes(int n)
 
 {
+
     // Loop to create processes
     for (int i = 0; i < n; i++)
     {
@@ -292,13 +302,12 @@ void create_processes(int n)
         else
         {
             // Parent process
-            process_pids[i] = pid; // Store the PID in the array to be able to use
-            processStates[i].ready = true;
-            processStates[i].running = false;
-            processStates[i].terminated = false;
-            processStates[i].suspended = false;
-
-            num_processes++; // Increment the number of created processes
+            process_pids[num_processes] = pid; // Store the PID in the array to be able to use
+            processStates[num_processes].ready = true;
+            processStates[num_processes].running = false;
+            processStates[num_processes].terminated = false;
+            processStates[num_processes].suspended = false;
+            num_processes++;
             enqueue(&scheduler, pid);
             // Suspend the child process immediately
             kill(pid, SIGSTOP);
@@ -308,9 +317,18 @@ void create_processes(int n)
 void alarm_handler(int signum)
 {
     // For running processes while the alarm goes off
-    if (is_running)
+    if (global_process_num != 0)
     {
-        sig_handle();
+        // Stop the running process and put it in the back of the queue
+        kill(global_process_num, SIGSTOP);
+        int i = findIndex(process_pids, num_processes, global_process_num);
+        processStates[i].ready = true;
+        processStates[i].running = false;
+        processStates[i].terminated = false;
+        processStates[i].suspended = false;
+        int top = dequeue(&scheduler);
+        enqueue(&scheduler, top);
+        global_process_num = 0;
     }
     alarm(numForS);
 }
@@ -344,15 +362,19 @@ void listCurrentProcesses(pid_t arr[], int size)
 void kill_process(int process_num)
 {
     // If the terminate is successful, update the values of the process
-    int exist = findIndex(process_pids, MAX_PROCESSES, process_num);
+    int exist = findIndex(process_pids, num_processes, process_num);
 
     // Conditionals to check for a successful terminate
     if (exist != -1 && (processStates[exist].ready || processStates[exist].running || processStates[exist].suspended))
     {
         if (kill(process_num, SIGKILL) == 0)
         {
+            if (global_process_num == process_num)
+            {
+                global_process_num = 0;
+            }
             printf("Process ID %d killed successfully and state is now set to terminated.\n", process_num);
-            int index = findIndex(process_pids, MAX_PROCESSES, process_num);
+            int index = findIndex(process_pids, num_processes, process_num);
             processStates[index].ready = false;
             processStates[index].running = false;
             processStates[index].terminated = true;
@@ -373,7 +395,7 @@ void kill_process(int process_num)
 void put_in_ready_state(int process_num)
 {
     // If the terminate is successful, update the values of the process
-    int exist = findIndex(process_pids, MAX_PROCESSES, process_num);
+    int exist = findIndex(process_pids, num_processes, process_num);
 
     if (exist != -1)
     {
@@ -381,7 +403,7 @@ void put_in_ready_state(int process_num)
         if (processStates[exist].suspended)
         {
 
-            int index = findIndex(process_pids, MAX_PROCESSES, process_num);
+            int index = findIndex(process_pids, num_processes, process_num);
             processStates[index].ready = true;
             processStates[index].running = false;
             processStates[index].terminated = false;
@@ -407,7 +429,7 @@ void put_in_ready_state(int process_num)
 void run_process(int process_num)
 {
     // Resumes process
-    int exist = findIndex(process_pids, MAX_PROCESSES, process_num);
+    int exist = findIndex(process_pids, num_processes, process_num);
     // If the process exists and is also not terminated
     if (exist != -1 && !(processStates[exist].terminated || processStates[exist].suspended || processStates[exist].running))
     {
@@ -421,7 +443,6 @@ void run_process(int process_num)
 
             // Logic for when all processes are scheduled to run
             global_process_num = process_num;
-            is_running = true;
         }
         else
         {
@@ -455,7 +476,7 @@ void sig_handle()
 
     // If the process is running, then turn it back into the suspended state
     int top = dequeue(&scheduler);
-    int i = findIndex(process_pids, MAX_PROCESSES, top);
+    int i = findIndex(process_pids, num_processes, top);
 
     if (processStates[i].running)
     {
@@ -467,7 +488,6 @@ void sig_handle()
         kill(process_pids[i], SIGSTOP);
 
         // Keeps track of the current process
-        is_running = false;
         global_process_num = 0;
     }
 }
