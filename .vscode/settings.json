@@ -25,6 +25,7 @@
     "sstream": "c",
     "bitset": "c",
     "utility": "c",
-    "stdbool.h": "c"
+    "stdbool.h": "c",
+    "types.h": "c"
   }
 }
