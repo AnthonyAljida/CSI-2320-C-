@@ -20,7 +20,7 @@ The whole project revolves around a queue data structure designed to keep track 
 
 I used global variables for flags, counters, and constants through the project, such as the max number of processes.
 
-The program runs in 1 infinite while loop that is always listening for commands from the user, the shell is on even as child processes are running. In order for this to happen, all commands needed to be implemented in a non-blocking way to go back to the infinite while loop. Therefore, conditionals and flags were favored instead of using nested while true loops.
+The program runs in 1 infinite while loop that is always listening for commands from the user, the shell is on even as child processes are running. In order for this to happen, all commands needed to be implemented in a non-blocking way to go back to the infinite while loop. Therefore, conditionals and flags were favored instead of using nested while true loops. Additionally, because the the user needs to input a command, the prompt is only displayed once and the process text will make the commands input scroll up the screen, the user will just need to type quickly, all commands will function properly
 
 For child processes, fork() and exec() system calls were used to run the binary file for task and they were suspended with a signal immediately.
 
@@ -236,23 +236,4 @@ Below is walkthrough of the experiments and commands for the project. All these 
       Total number of processes 5
    ```
 
-9. `rall`: Put all processes back in the ready queue
-
-   ```bash
-      Process IDs:
-      Process 1, 102671 is suspended
-      Process 2, 102672 is suspended
-      Process 3, 102673 is suspended
-      Process 4, 102674 is suspended
-      Process 5, 102675 is suspended
-      Total number of processes 5
-      shell 5500>>>rall
-      Process ID 102671 is put back into ready queue
-      Process ID 102672 is put back into ready queue
-      Process ID 102673 is put back into ready queue
-      Process ID 102674 is put back into ready queue
-      Process ID 102675 is put back into ready queue
-      Process ID 102671 resumed and state is now running.
-      shell 5500>>>Process 102671 at iteration 1
-      Process 102671 at iteration 2
-   ```
+9. `rall`: Process is built in by default in the scheduler, not needed in my design

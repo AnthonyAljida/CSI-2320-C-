@@ -182,19 +182,12 @@ int main()
 
         case 'r':
 
-            // Professor mentioned on the forums
-
-            // Tells program rall is pressed
-            // if (strcmp(command, "rall") == 0)
-            // {
-            //     // Schedule every process to run
-            //     for (int i = 0; i < num_processes; i++)
-            //     {
-            //         put_in_ready_state(process_pids[i]);
-            //     }
-
-            //     break;
-            // }
+            if (strcmp(command, "rall") == 0)
+            {
+                // Schedule every process to run
+                printf("Process already build in by default\n");
+                break;
+            }
 
             // Error handling
             if (strlen(command) > 1 && !(isdigit(command[1])))
