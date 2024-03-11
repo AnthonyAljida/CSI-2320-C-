@@ -11,7 +11,7 @@ private:
     int hours;
     int minutes;
     int seconds;
-    bool twelveHours;
+    bool twelveHourFormat;
 
 public:
     // Normal constructor
