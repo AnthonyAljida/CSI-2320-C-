@@ -3,11 +3,11 @@ CXXFLAGS = -Wall -std=c++11
 
 all: main clean
 
-main: Clock.o
-	$(CXX) $(CXXFLAGS) -o main Clock.o
+main: CityClock.o
+	$(CXX) $(CXXFLAGS) -o main CityClock.o
 
-Clock.o: Clock.cpp Clock.h
-	$(CXX) $(CXXFLAGS) -c Clock.cpp
+CityClock.o: CityClock.cpp CityClock.h
+	$(CXX) $(CXXFLAGS) -c CityClock.cpp
 
 clean:
 	rm -f *.o

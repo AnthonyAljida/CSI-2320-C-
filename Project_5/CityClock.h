@@ -20,7 +20,29 @@ public:
     // Destructor
     ~CityClock();
     // Overloaded constructor
-    CityClock(int hour, int minute, int second);
+    CityClock(int hour, int minute, int second, const char *city);
+
+    // Copy constructor
+    CityClock(const CityClock &other);
+
+    // Move constructor
+    CityClock(CityClock &&other);
+
+    // Copy assignment operator
+    CityClock &operator=(const CityClock &other);
+
+    // Move assignment operator
+    CityClock &operator=(CityClock &&other);
+
+    // Type conversion function
+    operator std::string() const;
+
+    // Overloaded addition operator
+    CityClock operator+(int secondsToAdd) const;
+
+    // Overloaded ostream insertion operator
+    friend std::ostream &operator<<(std::ostream &os, const CityClock &clock);
+
     // Change to military time
     void toggleFormat();
     // Show the current time
