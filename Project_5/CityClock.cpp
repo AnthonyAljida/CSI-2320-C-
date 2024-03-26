@@ -94,12 +94,7 @@ CityClock &CityClock::operator=(CityClock &&origin)
 
 CityClock::operator std::string() const
 {
-    // std::ostringstream oss;
-    // oss << std::setfill('0') << std::setw(2) << hours << ":"
-    //     << std::setw(2) << minutes << ":"
-    //     << std::setw(2) << seconds;
-    // std::string timeStr = std::string(cityName) + " - " + oss.str();
-    // return twelveHourFormat ? timeStr : timeStr + (hours < 12 ? " AM" : " PM");
+
     if (cityName != nullptr)
     {
         string time = cityName;
